@@ -1,0 +1,9 @@
+*.csv
+reviews_raw.csv
+reviews_clean.csv
+data/
+venv/
+__pycache__/
+*.pyc
+outputs/
+
