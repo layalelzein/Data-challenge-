@@ -7,8 +7,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from sklearn.feature_extraction.text import TfidfVectorizer
-from nltk.corpus import stopwords
 import re
+import nltk
+
+# NLTK downloads — AVANT tout import nltk.corpus
+nltk.download("stopwords", quiet=True)
+nltk.download("punkt", quiet=True)
+
+from nltk.corpus import stopwords
 
 # ─────────────────────────────────────────────
 # CONFIG PAGE
@@ -44,7 +50,6 @@ df = load_data()
 # ─────────────────────────────────────────────
 @st.cache_data
 def get_stopwords():
-    import nltk
     stop_en = set(stopwords.words("english"))
     stop_fr = set(stopwords.words("french"))
     return stop_en | stop_fr | {
@@ -131,7 +136,7 @@ for i, cab in enumerate(cabinets_selected):
     sub = dff[dff["cabinet"] == cab]
     avg = sub["rating"].mean()
     n   = len(sub)
-    rec = dff_rec = sub[sub["recommends"] != "unknown"]
+    rec = sub[sub["recommends"] != "unknown"]
     taux = (rec["recommends"] == "positive").sum() / len(rec) * 100 if len(rec) > 0 else 0
 
     with cols[i]:
@@ -199,7 +204,6 @@ with tab1:
         fig2.update_layout(plot_bgcolor="white", height=350)
         st.plotly_chart(fig2, use_container_width=True)
 
-    # Évolution temporelle
     evolution = dff.groupby(["year", "cabinet"])["rating"].mean().round(2).reset_index()
     fig3 = px.line(
         evolution,
@@ -261,7 +265,6 @@ with tab2:
             )
             st.plotly_chart(fig5, use_container_width=True)
 
-    # Taux de recommandation
     st.divider()
     rec = dff[dff["recommends"] != "unknown"].copy()
     if len(rec) > 0:
@@ -306,7 +309,6 @@ with tab3:
         text = str(text).lower()
         return sum(1 for k in keywords if k in text)
 
-    # ── calcul UNE SEULE FOIS ──────────────────────────────────
     heatmap_rows = []
     for cab in cabinets_selected:
         sub = dff[dff["cabinet"] == cab]
@@ -320,7 +322,6 @@ with tab3:
 
     heatmap_df = pd.DataFrame(heatmap_rows).set_index("cabinet")
 
-    # ── UN SEUL graphique ──────────────────────────────────────
     fig6 = go.Figure(data=go.Heatmap(
         z=heatmap_df.values,
         x=heatmap_df.columns.tolist(),
@@ -339,14 +340,14 @@ with tab3:
     )
     st.plotly_chart(fig6, use_container_width=True)
 
-    # ── Lecture rapide ─────────────────────────────────────────
     st.markdown("#### 💡 Lecture rapide")
     for cab in cabinets_selected:
         if cab in heatmap_df.index:
-            row  = heatmap_df.loc[cab]
+            row   = heatmap_df.loc[cab]
             best  = row.idxmax()
             worst = row.idxmin()
             st.markdown(f"**{cab}** → ✅ Point fort : **{best}** · ⚠️ Point faible : **{worst}**")
+
 # ══════════════════════════════════════════════
 # TAB 4 — PROFILS
 # ══════════════════════════════════════════════
@@ -383,7 +384,7 @@ with tab4:
         fig9.update_layout(plot_bgcolor="white", height=380)
         st.plotly_chart(fig9, use_container_width=True)
 
-    # Répartition séniorité par cabinet
+    seniority_order = ["Intern", "Junior", "Mid-level", "Senior", "Executive"]
     sen_dist = dff.groupby(["cabinet", "seniority"]).size().reset_index(name="count")
     sen_dist["pct"] = sen_dist.groupby("cabinet")["count"].transform(
         lambda x: x / x.sum() * 100
