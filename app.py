@@ -306,47 +306,47 @@ with tab3:
         text = str(text).lower()
         return sum(1 for k in keywords if k in text)
 
-heatmap_data = []
-for cab in cabinets_selected:
-    sub = dff[dff["cabinet"] == cab]
-    row = {"cabinet": cab}
-    for theme, keywords in THEMES.items():
-        pros_s = sub["pros_clean"].apply(lambda x: theme_score(x, keywords)).mean()
-        cons_s = sub["cons_clean"].apply(lambda x: theme_score(x, keywords)).mean()
-        total  = pros_s + cons_s
-        # Normalisation -1 à +1
-        score  = (pros_s - cons_s) / total if total > 0 else 0
-        row[theme] = round(score, 3)
-    heatmap_data.append(row)
+    # ── calcul UNE SEULE FOIS ──────────────────────────────────
+    heatmap_rows = []
+    for cab in cabinets_selected:
+        sub = dff[dff["cabinet"] == cab]
+        row = {"cabinet": cab}
+        for theme, keywords in THEMES.items():
+            pros_s = sub["pros_clean"].apply(lambda x: theme_score(x, keywords)).mean()
+            cons_s = sub["cons_clean"].apply(lambda x: theme_score(x, keywords)).mean()
+            total  = pros_s + cons_s
+            row[theme] = round((pros_s - cons_s) / total if total > 0 else 0, 3)
+        heatmap_rows.append(row)
 
-    heatmap_df = pd.DataFrame(heatmap_data).set_index("cabinet")
+    heatmap_df = pd.DataFrame(heatmap_rows).set_index("cabinet")
 
+    # ── UN SEUL graphique ──────────────────────────────────────
     fig6 = go.Figure(data=go.Heatmap(
         z=heatmap_df.values,
         x=heatmap_df.columns.tolist(),
         y=heatmap_df.index.tolist(),
         colorscale="RdYlGn",
-        zmin=-1, zmax=1, 
-        text=heatmap_df.values.round(3),
+        zmin=-1, zmax=1,
+        text=heatmap_df.values.round(2),
         texttemplate="%{text}",
         colorbar_title="Score"
     ))
     fig6.update_layout(
-        height=350,
+        height=max(250, len(cabinets_selected) * 80),
         xaxis_title="Thème",
-        yaxis_title="Cabinet"
+        yaxis_title="Cabinet",
+        margin=dict(l=80, r=40, t=20, b=60)
     )
     st.plotly_chart(fig6, use_container_width=True)
 
-    # Insight automatique
+    # ── Lecture rapide ─────────────────────────────────────────
     st.markdown("#### 💡 Lecture rapide")
     for cab in cabinets_selected:
         if cab in heatmap_df.index:
-            row = heatmap_df.loc[cab]
+            row  = heatmap_df.loc[cab]
             best  = row.idxmax()
             worst = row.idxmin()
             st.markdown(f"**{cab}** → ✅ Point fort : **{best}** · ⚠️ Point faible : **{worst}**")
-
 # ══════════════════════════════════════════════
 # TAB 4 — PROFILS
 # ══════════════════════════════════════════════
