@@ -33,7 +33,7 @@ CABINETS = ["Deloitte", "PwC", "EY", "KPMG"]
 # ─────────────────────────────────────────────
 @st.cache_data
 def load_data():
-    df = pd.read_csv("reviews_clean.csv")
+    df = pd.read_csv("reviews_clean.csv.gz", compression="gzip")
     df["year"] = pd.to_numeric(df["year"], errors="coerce")
     return df
 
